@@ -29,13 +29,13 @@ struct tensor
         int *stride;
 
         
-        __device__ __host__ T operator() (const int j , const int dims)
+        __device__ __host__ T operator() (const int j , const int dims, const int* ref_stride)
         {
             int result = 0;
             for (int i = 0;i<dims;i++)
             {
                 
-                int idxs = (j/ (1*(*(stride+i)==1)+(*(stride+i))*(*(stride+i)!=1)));
+                int idxs = (j/ (1*(*(ref_stride[i])==1)+(*(ref_stride[i]))*(*(ref_stride[i])!=1)));
                 result += (*(stride+i))*(idxs%(*(shape+i)));
                 //printf("%d ",basic_shape[i]);
                 printf("%d, %d, %d, %d  \n",idxs%(*(shape+i)),idxs,j,*(stride+i));
@@ -88,7 +88,7 @@ void add(tensor<T> a, tensor<T> b,tensor<T> c ,int N_,int dims)
     //printf("a value: %d, b value: %d\n", a[i], b[i]);
     if (i < N_)
     {
-        c.set(i,a(i,dims) + b(i,dims));
+        c.set(i,a(i,dims,a.stride) + b(i,dims,a.stride));
         //printf("c value: %d, sum value: %d\n", c[i],a[i] + b[i]);
     }
 
