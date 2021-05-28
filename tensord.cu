@@ -35,7 +35,7 @@ struct tensor
             for (int i = 0;i<dims;i++)
             {
                 
-                int idxs = (j/ (1*(*(ref_stride[i])==1)+(*(ref_stride[i]))*(*(ref_stride[i])!=1)));
+                int idxs = (j/ (1*(ref_stride[i]==1)+(ref_stride[i])*(ref_stride[i]!=1)));
                 result += (*(stride+i))*(idxs%(*(shape+i)));
                 //printf("%d ",basic_shape[i]);
                 printf("%d, %d, %d, %d  \n",idxs%(*(shape+i)),idxs,j,*(stride+i));
@@ -293,6 +293,29 @@ class Tensor
                 tensor[stride_vector[Axis[i]]] = temp;
             }*/
         }
+
+        void random_initialize()
+        {
+            T* return_data;
+            curandGenerator_t gen;
+            /* Allocate n floats on device */
+            cudaMalloc((void **)&return_data, shape_total*sizeof(T));
+
+            /* Create pseudo-random number generator */
+            curandCreateGenerator(&gen,CURAND_RNG_PSEUDO_DEFAULT);
+            
+            /* Set seed */
+            curandSetPseudoRandomGeneratorSeed(gen,1234ULL);
+
+            /* Generate n floats on device */
+            curandGenerateUniform(gen, return_data, shape_total);
+
+            /* Copy device memory to host */
+            cudaMemcpy(&tensor_cpu[0], return_data, shape_total*sizeof(T),cudaMemcpyDeviceToHost);
+            curandDestroyGenerator(gen);
+            cudaFree(return_data);
+        }
+
         void print_stride()
         {
             cout<<"[ ";
