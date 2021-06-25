@@ -231,6 +231,12 @@ class Tensor
             return tensor_cpu[result]; 
         }
 
+        T operator[](const int i)
+        {
+            return tensor_cpu[i];
+        }
+
+
         void operator = (Tensor b)
         {
             dimension_list = b.shape();
@@ -238,9 +244,11 @@ class Tensor
             tensor_cpu = b.flatten();
 
         }
+
+
         
 
-        Tensor operator + (Tensor &b)
+        Tensor operator + (Tensor b)
         {
             b.to_gpu();
             to_gpu();
@@ -267,7 +275,7 @@ class Tensor
             cout << endl;
             
             output_tensor.print_elems();
-            //to_cpu();
+            //to_cpu();am seder
             //b.to_cpu();
             return output_tensor;
         }
@@ -286,35 +294,26 @@ class Tensor
                     dimension_list[i] = dimension_list[Axis[i]];
                     dimension_list[Axis[i]] = temp;
                 }
-            /*for (int i = 0;i<int(shape_total/2);i++)
-            {
-                temp = tensor[stride_vector[i]];
-                tensor[stride_vector[i]] = tensor[stride2[Axis[i]]];
-                tensor[stride_vector[Axis[i]]] = temp;
-            }*/
         }
-
+        
         void random_initialize()
         {
             T* return_data;
             curandGenerator_t gen;
-            /* Allocate n floats on device */
             cudaMalloc((void **)&return_data, shape_total*sizeof(T));
 
-            /* Create pseudo-random number generator */
             curandCreateGenerator(&gen,CURAND_RNG_PSEUDO_DEFAULT);
             
-            /* Set seed */
             curandSetPseudoRandomGeneratorSeed(gen,1234ULL);
 
-            /* Generate n floats on device */
             curandGenerateUniform(gen, return_data, shape_total);
 
-            /* Copy device memory to host */
             cudaMemcpy(&tensor_cpu[0], return_data, shape_total*sizeof(T),cudaMemcpyDeviceToHost);
             curandDestroyGenerator(gen);
             cudaFree(return_data);
         }
+        
+        
 
         void print_stride()
         {
@@ -412,8 +411,25 @@ class Tensor
             return dimension_list;
         }
 
-
-        
+        //concats two vectors along a given axis
+        Tensor concat (Tensor b, int axis)
+        {
+            Tensor<T,Types ...> output_tensor();
+            int new_shape = shape_total/dimension_list[axis];
+            for (int i = 0; i< new_shape;i++)
+            {
+                if (i/stride_vector[axis])
+                {
+                    output_tensor[i] = tensor_cpu[i]%dimension_list[axis];
+                }
+                else
+                {
+                    output_tensor[i] = b[i]%dimension_list[axis];
+                }
+               
+            }
+            return output_tensor;
+        }
 };
 
 //template<typename T, size_t ... Types,typename... Args>
