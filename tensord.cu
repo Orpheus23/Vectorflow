@@ -37,8 +37,6 @@ struct tensor
                 
                 int idxs = (j/ (1*(ref_stride[i]==1)+(ref_stride[i])*(ref_stride[i]!=1)));
                 result += (*(stride+i))*(idxs%(*(shape+i)));
-                //printf("%d ",basic_shape[i]);
-                printf("%d, %d, %d, %d  \n",idxs%(*(shape+i)),idxs,j,*(stride+i));
             }
             
             return *(flattened+result); 
@@ -173,7 +171,7 @@ class Tensor
         //Initialize the Constructor for no inputs *defaults to zero vector*
         Tensor()
         {
-            tensor_cpu.assign(shape_total,0);
+            tensor_cpu(shape_total,0);
             
         }
 
@@ -252,7 +250,7 @@ class Tensor
         {
             b.to_gpu();
             to_gpu();
-            Tensor<T,Types ...> output_tensor;
+            Tensor<T,Types ...> output_tensor();
             output_tensor.to_gpu();
             
             tensor<T> mat1;
@@ -274,7 +272,7 @@ class Tensor
             cout << "CUDA Add successful";
             cout << endl;
             
-            output_tensor.print_elems();
+            //output_tensor.print_elems();
             //to_cpu();am seder
             //b.to_cpu();
             return output_tensor;
@@ -295,7 +293,7 @@ class Tensor
                     dimension_list[Axis[i]] = temp;
                 }
         }
-        
+        /*
         void random_initialize()
         {
             T* return_data;
@@ -312,7 +310,7 @@ class Tensor
             curandDestroyGenerator(gen);
             cudaFree(return_data);
         }
-        
+        */
         
 
         void print_stride()
@@ -412,25 +410,30 @@ class Tensor
         }
 
         //concats two vectors along a given axis
-        Tensor concat (Tensor b, int axis)
-        {
-            Tensor<T,Types ...> output_tensor();
-            int new_shape = shape_total/dimension_list[axis];
+        void concat (Tensor b, int axis)
+        {   int new_shape = (shape_total/dimension_list[axis])*(stride_vector[axis]+b.shape()[axis]);
+            vector<T> output_tensor(new_shape,0);
             for (int i = 0; i< new_shape;i++)
             {
-                if (i/stride_vector[axis])
+                if (((i/stride_vector[axis])%dimension_list[axis] ) < dimension_list[axis] )
                 {
-                    output_tensor[i] = tensor_cpu[i]%dimension_list[axis];
+                    output_tensor[i] = tensor_cpu[i];
                 }
                 else
                 {
-                    output_tensor[i] = b[i]%dimension_list[axis];
+                    output_tensor[i] = b[i];
                 }
                
             }
-            return output_tensor;
+            tensor_cpu = output_tensor;
+            dimension_list[axis] += b.shape()[axis];
+            stride_vector = stride_convert(dimension_list);
+
+
         }
 };
+
+
 
 //template<typename T, size_t ... Types,typename... Args>
 //T &Tensor<T,Types ...>::operator()(const Args ... Axis)
@@ -470,8 +473,11 @@ int main()
     Tensor<int,4,4> a2(v);
     
     a2.print_elems();
-    Tensor<int,4,4> a3; 
+    Tensor<int,4,4> a3(); 
     a3 = a2+a0;
+    Tensor <int,4,4> a4(v);
+    a4.concat(a3, 0);
+    a4.print_elems();
     a3.print_elems();
     
     
