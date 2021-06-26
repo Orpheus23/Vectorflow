@@ -407,20 +407,20 @@ class Tensor
 
         //concats two vectors along a given axis
         void concat (Tensor &b, int axis)
-        {   int new_shape = (shape_total/dimension_list[axis])*(stride_vector[axis]+b.shape()[axis]);
+        {   long long new_shape = (shape_total/dimension_list[axis])*(stride_vector[axis]+b.shape()[axis]);
+            long long sub_index;
             dimension_list[axis] += b.shape()[axis];
             vector<T> output_tensor(new_shape,0);
-            for (int i = 0; i< new_shape;i++)
+            for (long long i = 0; i< new_shape;i++)
             {
-                if (((i/stride_vector[axis])%dimension_list[axis] ) < dimension_list[axis] )
+                if (((i/stride_vector[axis])%dimension_list[axis] ) < orig_dim )
                 {
-                    cout <<"[" << i <<" , " << (i/stride_vector[axis])%dimension_list[axis] << "], ";
                     output_tensor[i] = tensor_cpu[i];
+                    sub_index = (long long)i;
                 }
                 else
                 {
-                    cout << i-dimension_list[axis]-1 <<" , ";
-                    output_tensor[i] = b[i-dimension_list[axis]-1];
+                    output_tensor[i] = b[i-sub_index-1];
                 }
                
             }
