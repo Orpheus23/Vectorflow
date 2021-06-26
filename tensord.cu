@@ -171,7 +171,8 @@ class Tensor
         //Initialize the Constructor for no inputs *defaults to zero vector*
         Tensor()
         {
-            tensor_cpu(shape_total,0);
+            vector<T> tens(shape_total,(T)0);
+            tensor_cpu = tens;
             
         }
 
@@ -246,11 +247,11 @@ class Tensor
 
         
 
-        Tensor operator + (Tensor b)
+        Tensor operator + (Tensor &b)
         {
             b.to_gpu();
             to_gpu();
-            Tensor<T,Types ...> output_tensor();
+            Tensor<T,Types ...> output_tensor;
             output_tensor.to_gpu();
             
             tensor<T> mat1;
@@ -328,10 +329,6 @@ class Tensor
             cudaMalloc(&mat.flattened, sizeof(T)*shape_total);
             cudaMalloc(&mat.stride, sizeof(int)*dimension_list.size());
             cudaMalloc(&mat.shape, sizeof(T)*dimension_list.size());
-            for (auto elem:tensor_cpu)
-            {
-                cout << elem<< " ";
-            }
             cudaMemcpy(mat.flattened, tensor_cpu.data(), sizeof(T)*shape_total, cudaMemcpyHostToDevice);
             cudaMemcpy(mat.shape, dimension_list.data(), sizeof(T)*dimension_list.size(), cudaMemcpyHostToDevice);
             cudaMemcpy(mat.stride, stride_vector.data(), sizeof(int)*stride_vector.size(), cudaMemcpyHostToDevice);
@@ -351,7 +348,6 @@ class Tensor
             //tensor_cpu.clear();
             cudaMemcpy(tensor_cpu.data(), mat.flattened, sizeof(T)*shape_total, cudaMemcpyDeviceToHost);
             
-            cout << endl;
             cudaFree(mat.flattened);
             cudaFree(mat.shape);
             //mat = {};
@@ -410,23 +406,25 @@ class Tensor
         }
 
         //concats two vectors along a given axis
-        void concat (Tensor b, int axis)
+        void concat (Tensor &b, int axis)
         {   int new_shape = (shape_total/dimension_list[axis])*(stride_vector[axis]+b.shape()[axis]);
+            dimension_list[axis] += b.shape()[axis];
             vector<T> output_tensor(new_shape,0);
             for (int i = 0; i< new_shape;i++)
             {
                 if (((i/stride_vector[axis])%dimension_list[axis] ) < dimension_list[axis] )
                 {
+                    cout <<"[" << i <<" , " << (i/stride_vector[axis])%dimension_list[axis] << "], ";
                     output_tensor[i] = tensor_cpu[i];
                 }
                 else
                 {
-                    output_tensor[i] = b[i];
+                    cout << i-dimension_list[axis]-1 <<" , ";
+                    output_tensor[i] = b[i-dimension_list[axis]-1];
                 }
                
             }
             tensor_cpu = output_tensor;
-            dimension_list[axis] += b.shape()[axis];
             stride_vector = stride_convert(dimension_list);
 
 
@@ -473,7 +471,7 @@ int main()
     Tensor<int,4,4> a2(v);
     
     a2.print_elems();
-    Tensor<int,4,4> a3(); 
+    Tensor<int,4,4> a3; 
     a3 = a2+a0;
     Tensor <int,4,4> a4(v);
     a4.concat(a3, 0);
