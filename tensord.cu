@@ -35,9 +35,10 @@ struct tensor
             int result = 0;
             for (int i = 0;i<dims;i++)
             {
-                
-                int idxs = (j/ (1*(ref_stride[i]==1)+(ref_stride[i])*(ref_stride[i]!=1)));
-                result += (*(stride+i))*(idxs%(*(shape+i)));
+                long long int curr_index = ref_stride[i];
+                int idxs = (j/ (1*(curr_index==1)+(curr_index)*(curr_index!=1)));
+                long long int stride_i = *(stride+i),shape_i=*(shape+i);
+                result += (stride_i) * (idxs%(shape_i));
             }
             
             return *(flattened+result); 
@@ -114,37 +115,75 @@ void dot(tensor<T> a, tensor<T> b,tensor<T> c ,int N_,int dims)
 
  
 
-template <typename T,typename T_>
-vector<T_> return_row (const T &v,vector<T_> empty,const vector<long long int> &dims)
+template <typename T>
+vector<T> return_row (vector<T> v,vector<T> empty,vector<long long int> &dims)
 {
-    return vector<T_>(1, v);
+    empty.insert(empty.end(),v.begin(),v.end());
+    dims.push_back(v.size());
+    return empty;
 }
 
 
 template<class T,typename T_>
-vector<T_> return_row(vector<T> &rows,vector<T_> empty,const vector<long long int> &dims)
+vector<T_> return_row(vector<T> &rows,vector<T_> empty,vector<long long int> &dims)
 {
-    if (dims.size()>1)
-    {
-        for (T element:rows)
-        {   
-            vector <long long int> new_dims(dims.begin()+1,dims.end());
-            empty = return_row(element,empty,new_dims);
-
-            //empty.insert( empty.end(), empty_temp.begin(),empty_temp.end());
-        }
+    dims.push_back(rows.size());
+    for (T element:rows)
+    {   
+        vector <T_> empty_temp = return_row(element,empty,dims);
+        empty.insert( empty.end(), empty_temp.begin(),empty_temp.end());
     }
-    else
-    {
-        for (T element:rows)
-        {
-            vector <long long int> new_dims(dims.begin()+1,dims.end());
-            vector<T_> empty_temp = return_row(element,empty,new_dims);
-
-            empty.insert( empty.end(), empty_temp.begin(),empty_temp.end());
-        }
-    }
+    
     return empty;
+}
+
+
+template<typename T>
+class Tensor
+{   
+    
+    int is_gpu = 0;
+    private:       
+        
+        
+        vector<long long int> stride_convert(vector<long long int> stride_vector_o)
+        {
+            stride_vector_o[stride_vector_o.size()-1]=1;
+            for (int i = stride_vector_o.size()-1;i>0;i--)
+                {
+                    stride_vector_o[i-1]*=stride_vector_o[i];
+                }
+            
+            return stride_vector_o;
+        }
+        
+        
+        //thrust::host_vector <T> tensor;
+        vector <T> tensor_cpu;
+        tensor <T> mat;
+        vector<long long int> dimension_list;
+
+    
+    public:
+        //Initialize the Constructer for nested vectors
+        template<class Y>
+        Tensor(Y a)
+        {
+            
+            tensor_cpu = return_row(a,tensor_cpu,dimension_list);
+            vector<long long int> stride_vector = stride_convert(dimension_list);
+            //stride_vector = dimension_list;
+            const long long int shape_total = accumulate(dimension_list.begin(),dimension_list.end(),1,multiplies<long long int>());
+            const int N = dimension_list.size();
+        }
+
+        //Initialize the Constructor for no inputs *defaults to zero vector*
+        Tensor()
+        {
+            vector<T> tens(1,(T)0);
+            tensor_cpu = tens;
+            
+        }
 }
 
 
@@ -243,9 +282,63 @@ class Tensor
             int result = 0;
             for (int i = 0;i<index.size();i++)
             {
-                result+= index[i]*stride_vector[i];
+                result+= (index[i]%dimension_list[i])*stride_vector[i];
             }
             return tensor_cpu[result]; 
+        }
+
+        Tensor<T> operator()(vector< vector<int> > index)
+        { 
+            int result;
+            vector <T> vals;
+            for (int i = 0;i<index[0].size();i++)
+            {
+                result = 0
+                for (int j = 0; j<index.size();j++)
+                {
+                    result+= (index[j][i]%dimension_list[j])*stride_vector[j];
+                }
+                vals.push_back(tensor_cpu[result])
+            }
+            Tensor <T> rets(vals);
+            return rets; 
+        }
+
+        Tensor<T> slice(vector< vector<int> > Axii)
+        {
+            
+            
+            vector <long long int> idxs(1,0);
+            vector <T> vals;
+            vector <int> sh;
+            for (int i = Axii.size()-1;i>=0;i--)
+            {
+                int j = 0;
+                auto old_size = idxs.size();
+                int current = Axii[i][0];
+                int end = Axii[i][Axii[i].size()-1];
+                int reverse = (end-current)<0;
+                reverse = (1-2*reverse)-(end==current);
+                if (reverse!=0) sh.push_back(reverse *(end-current));
+                reverse += (end==(current-1))-((end-1)==current);
+                
+                idxs.reserve(((reverse *(end-current)))* (old_size));
+                std::copy_n(idxs.begin(), old_size, std::back_inserter(idxs));
+                
+                for (int j = 0;j<idxs.size();j++)
+                {
+                    idxs[j]+=(current%dimension_list[i])*stride_vector[i]);
+                    current += reverse*((j%old_size)==0);
+                    if (i == 0) vals.push_back(tensor_cpu[idxs[j]]);
+                    
+                }
+                
+            }
+            Tensor <T> result(vals);
+            result.reshape(sh);
+            return result;
+
+
         }
 
         T operator[](const int i)
@@ -320,16 +413,16 @@ class Tensor
         //Transpose (Basically affects the strides)
         void Transpose(vector <int> Axis = {1})
         {
-            int temp;
+            long long int temp,temp_d;
             vector <long long int> stride2 = stride_vector;
             for (int i = 0;i<Axis.size();i++)
                 {
                     temp = stride_vector[i];
                     stride_vector[i] = stride_vector[Axis[i]];
                     stride_vector[Axis[i]] = temp;
-                    temp = dimension_list[i];
+                    temp_d = dimension_list[i];
                     dimension_list[i] = dimension_list[Axis[i]];
-                    dimension_list[Axis[i]] = temp;
+                    dimension_list[Axis[i]] = temp_d;
                 }
         }
         
@@ -348,7 +441,7 @@ class Tensor
             cudaMemcpy(&tensor_cpu[0], return_data, shape_total*sizeof(T),cudaMemcpyDeviceToHost);
             curandDestroyGenerator(gen);
             cudaFree(return_data);
-        }
+        }((end-current)>1)
         
         
 
@@ -370,7 +463,7 @@ class Tensor
             cudaMemcpy(mat.flattened, tensor_cpu.data(), sizeof(T)*shape_total, cudaMemcpyHostToDevice);
             cudaMemcpy(mat.shape, dimension_list.data(), sizeof(long long int)*dimension_list.size(), cudaMemcpyHostToDevice);
             cudaMemcpy(mat.stride, stride_vector.data(), sizeof(long long int)*stride_vector.size(), cudaMemcpyHostToDevice);
-            is_gpu = 1;
+            is_gpu = 1;((end-current)>1)
             
         }
         
