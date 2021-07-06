@@ -219,7 +219,7 @@ class Tensor
             cout<<"]"<<endl;
         }
         
-        //template <class Output>
+        //Reduces it to a base tensor class for gpu
         auto basic()
         {
             assert(is_gpu == 1);
@@ -280,7 +280,7 @@ class Tensor
             mat3 = output_tensor.basic();
 
             add <T> <<<(shape_total + 4  - 1) / 4 , 4>>> (mat1,mat2,mat3,shape_total,dimension_list.size());
-            //cudaDeviceReset();
+            //cudaDeviceReset(); conflicts
             b.to_cpu();
             to_cpu();
             output_tensor.to_cpu();
@@ -406,24 +406,25 @@ class Tensor
 
         //concats two vectors along a given axis
         void concat (Tensor &b, int axis)
-        {   long long new_shape = (shape_total/dimension_list[axis])*(dimension_list[axis]+b.shape()[axis]);
-            long long int orig_dim = dimension_list[axis];
+
+        {   
+            long long new_shape = (shape_total/dimension_list[axis])*(dimension_list[axis]+b.shape()[axis]);
+            int orig_dim = dimension_list[axis];
             long long sub_index = 0;
             dimension_list[axis] += b.shape()[axis];
             
-            int opp_idx = 0;
+            long long opp_idx = 0;
             vector<T> output_tensor(new_shape,0);
             for (long long i = 0; i< new_shape;i++)
             {
                 if (((i/stride_vector[axis])%dimension_list[axis] ) < orig_dim )
                 {
                     output_tensor[i] = tensor_cpu[i-opp_idx];
-                    cout<<(i/stride_vector[axis])%dimension_list[axis]<<",";
+
                     sub_index+=1;
                 }
                 else
                 {
-                    cout << i-sub_index<<" ,";
                     output_tensor[i] = b[i-sub_index];
                     opp_idx +=1;
                     
