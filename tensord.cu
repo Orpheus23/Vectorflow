@@ -408,19 +408,18 @@ class Tensor
         void concat (Tensor &b, int axis)
 
         {   
-            long long new_shape = (shape_total/dimension_list[axis])*(dimension_list[axis]+b.shape()[axis]);
-            int orig_dim = dimension_list[axis];
-            long long sub_index = 0;
+            long long int new_shape = (shape_total/dimension_list[axis])*(dimension_list[axis]+b.shape()[axis]);
+            long long int orig_dim = dimension_list[axis];
+            long long int sub_index = 0;
             dimension_list[axis] += b.shape()[axis];
             
-            long long opp_idx = 0;
+            long long int opp_idx = 0;
             vector<T> output_tensor(new_shape,0);
             for (long long i = 0; i< new_shape;i++)
             {
                 if (((i/stride_vector[axis])%dimension_list[axis] ) < orig_dim )
                 {
                     output_tensor[i] = tensor_cpu[i-opp_idx];
-
                     sub_index+=1;
                 }
                 else
@@ -472,5 +471,3 @@ int main()
 
 }
 
-// You can use it now
-// Read the notepad file next time if you have questions
