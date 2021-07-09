@@ -161,8 +161,8 @@ class Tensor
         
         vector<long long int> dimension_list;
         vector<long long int> stride_vector;
-        const long long int shape_total;
-        const int N;
+        long long int shape_total=1;
+        int N=1;
         //thrust::host_vector <T> tensor;
         vector <T> tensor_cpu;
         tensor <T> mat;
@@ -180,17 +180,17 @@ class Tensor
             N = dimension_list.size();
             vector <long long int> temp;
             tensor_cpu = return_row(a,tensor_cpu,temp);
-            del temp;
         }
 
         //Initialize the Constructor for multidimensional array *infers shape from that*
         template<class Y>
         Tensor(Y a)
         {
+            N = dimension_list.size();
             tensor_cpu = return_row(a,tensor_cpu,dimension_list);
             stride_vector = stride_convert(dimension_list);
             shape_total = accumulate(dimension_list.begin(),dimension_list.end(),1,multiplies<long long int>());
-            N = dimension_list.size();
+            
         }
 
         //Initialize the Constructor for only shape *defaults to zero vector*
@@ -315,7 +315,7 @@ class Tensor
                 
             }
             Tensor <T> result(vals);
-            result.reshape(sh);
+            result.Reshape(sh);
             return result;
 
 
@@ -342,7 +342,7 @@ class Tensor
         {
             b.to_gpu();
             to_gpu();
-            Tensor<T> output_tensor();
+            Tensor<T> output_tensor;
             output_tensor.to_gpu();
             
             tensor<T> mat1;
@@ -522,6 +522,19 @@ class Tensor
         }
 };
 
+template<typename T, size_t ... Types>
+class Tensor
+{
+    vector<int> dimension_list = initializer_list<int>{Types...};
+    
+    Tensor <T> value;
+
+    template<class Y>
+    Tensor(Y a)
+    {
+        value(a,Types...);
+    }
+};
 
 int main()
 {
@@ -539,7 +552,7 @@ int main()
     //vector <int> idxs {1,1};
     value = a0(2,0);
     cout<<value<<endl;
-    Tensor<int> a2(v);
+    Tensor<int,4,4> a2(v);
     
     a2.print_elems();
     Tensor<int> a3(4,4); 
