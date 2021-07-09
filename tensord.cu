@@ -2,7 +2,7 @@
 #include <iostream>
 #include <numeric>
 #include <initializer_list>
-#include <queue>
+#include <algorithm>
 #include <cuda.h>
 #include <curand.h>
 #include <cuda_runtime.h>
@@ -138,6 +138,8 @@ vector<T_> return_row(vector<T> &rows,vector<T_> empty,vector<long long int> &di
 }
 
 
+
+
 template<typename T>
 class Tensor
 {   
@@ -157,78 +159,57 @@ class Tensor
             return stride_vector_o;
         }
         
-        
+        vector<long long int> dimension_list;
+        vector<long long int> stride_vector;
+        const long long int shape_total;
+        const int N;
         //thrust::host_vector <T> tensor;
         vector <T> tensor_cpu;
         tensor <T> mat;
-        vector<long long int> dimension_list;
 
     
     public:
-        //Initialize the Constructer for nested vectors
+        //Initialize the Constructer for a vector without shape given in the vector and explicitely giving shape
+        template<class Y,typename ... Args>
+        Tensor(Y a,Args... Axii)
+        {
+            dimension_list = initializer_list<long long int>{Axii...};
+            stride_vector = stride_convert(dimension_list);
+            //stride_vector = dimension_list;
+            shape_total = accumulate(dimension_list.begin(),dimension_list.end(),1,multiplies<long long int>());
+            N = dimension_list.size();
+            vector <long long int> temp;
+            tensor_cpu = return_row(a,tensor_cpu,temp);
+            del temp;
+        }
+
+        //Initialize the Constructor for multidimensional array *infers shape from that*
         template<class Y>
         Tensor(Y a)
         {
-            
             tensor_cpu = return_row(a,tensor_cpu,dimension_list);
-            vector<long long int> stride_vector = stride_convert(dimension_list);
+            stride_vector = stride_convert(dimension_list);
+            shape_total = accumulate(dimension_list.begin(),dimension_list.end(),1,multiplies<long long int>());
+            N = dimension_list.size();
+        }
+
+        //Initialize the Constructor for only shape *defaults to zero vector*
+        template<typename ... Args>
+        Tensor(Args... Axii)
+        {
+            dimension_list = initializer_list<long long int>{Axii...};
+            stride_vector = stride_convert(dimension_list);
             //stride_vector = dimension_list;
-            const long long int shape_total = accumulate(dimension_list.begin(),dimension_list.end(),1,multiplies<long long int>());
-            const int N = dimension_list.size();
+            shape_total = accumulate(dimension_list.begin(),dimension_list.end(),1,multiplies<long long int>());
+            N = dimension_list.size();
+            vector<T> tens(shape_total,(T)0);
+            tensor_cpu = tens;
         }
 
         //Initialize the Constructor for no inputs *defaults to zero vector*
         Tensor()
         {
             vector<T> tens(1,(T)0);
-            tensor_cpu = tens;
-            
-        }
-}
-
-
-template<typename T, size_t ... Types>
-class Tensor
-{   
-    
-    int is_gpu = 0;
-    private:       
-        
-        vector<long long int> dimension_list = initializer_list<long long int>{Types...};
-        vector<long long int> stride_vector = stride_convert(dimension_list);
-        //stride_vector = dimension_list;
-        const long long int shape_total = accumulate(dimension_list.begin(),dimension_list.end(),1,multiplies<long long int>());
-        const int N = dimension_list.size();
-        vector<long long int> stride_convert(vector<long long int> stride_vector_o)
-        {
-            stride_vector_o[stride_vector_o.size()-1]=1;
-            for (int i = stride_vector_o.size()-1;i>0;i--)
-                {
-                    stride_vector_o[i-1]*=stride_vector_o[i];
-                }
-            
-            return stride_vector_o;
-        }
-        
-        
-        //thrust::host_vector <T> tensor;
-        vector <T> tensor_cpu;
-        tensor <T> mat;
-
-    
-    public:
-        //Initialize the Constructer for nested vectors
-        template<class Y>
-        Tensor(Y a)
-        {
-            
-            tensor_cpu = return_row(a,tensor_cpu,dimension_list);
-        }
-
-        //Initialize the Constructor for no inputs *defaults to zero vector*
-        Tensor()
-        {
-            vector<T> tens(shape_total,(T)0);
             tensor_cpu = tens;
             
         }
@@ -313,7 +294,6 @@ class Tensor
             vector <int> sh;
             for (int i = Axii.size()-1;i>=0;i--)
             {
-                int j = 0;
                 auto old_size = idxs.size();
                 int current = Axii[i][0];
                 int end = Axii[i][Axii[i].size()-1];
@@ -362,7 +342,7 @@ class Tensor
         {
             b.to_gpu();
             to_gpu();
-            Tensor<T,Types ...> output_tensor;
+            Tensor<T> output_tensor();
             output_tensor.to_gpu();
             
             tensor<T> mat1;
@@ -388,7 +368,7 @@ class Tensor
         {
             b.to_gpu();
             to_gpu();
-            Tensor<T,Types ...> output_tensor;
+            Tensor<T> output_tensor();
             output_tensor.to_gpu();
             
             tensor<T> mat1;
@@ -475,7 +455,7 @@ class Tensor
             cudaMemcpy(mat.flattened, tensor_cpu.data(), sizeof(T)*shape_total, cudaMemcpyHostToDevice);
             cudaMemcpy(mat.shape, dimension_list.data(), sizeof(long long int)*dimension_list.size(), cudaMemcpyHostToDevice);
             cudaMemcpy(mat.stride, stride_vector.data(), sizeof(long long int)*stride_vector.size(), cudaMemcpyHostToDevice);
-            is_gpu = 1;((end-current)>1)
+            is_gpu = 1;
             
         }
         
@@ -511,7 +491,6 @@ class Tensor
 
         //concats two vectors along a given axis
         void concat (Tensor &b, int axis)
-
         {   
             long long int new_shape = (shape_total/dimension_list[axis])*(dimension_list[axis]+b.shape()[axis]);
             long long int orig_dim = dimension_list[axis];
@@ -554,22 +533,22 @@ int main()
 
     
     //2 5 7 11 5 8 10 14 7 10 6 16 11 14 16 10
-    Tensor<int,4,4> a0(v); 
+    Tensor<int> a0(v); 
     a0.print_elems();
     int value = a0(2,0);
     //vector <int> idxs {1,1};
     value = a0(2,0);
     cout<<value<<endl;
-    Tensor<int,4,4> a2(v);
+    Tensor<int> a2(v);
     
     a2.print_elems();
-    Tensor<int,4,4> a3; 
+    Tensor<int> a3(4,4); 
     a3 = a2+a0;
-    Tensor <int,4,4> a4(v);
+    Tensor <int> a4(v);
     a4.concat(a3, 1);
     a4.print_elems();
     a3.print_elems();
-    Tensor <float,4,4> a5;
+    Tensor <float> a5;
     a5.random_initialize();
     a5.print_elems();
     Tensor <float> b1,b2;
