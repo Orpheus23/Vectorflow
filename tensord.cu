@@ -169,18 +169,6 @@ class Tensor
 
     
     public:
-        //Initialize the Constructer for a vector without shape given in the vector and explicitely giving shape
-        template<class Y,typename ... Args>
-        Tensor(Y a,Args... Axii)
-        {
-            dimension_list = initializer_list<long long int>{Axii...};
-            stride_vector = stride_convert(dimension_list);
-            //stride_vector = dimension_list;
-            shape_total = accumulate(dimension_list.begin(),dimension_list.end(),1,multiplies<long long int>());
-            N = dimension_list.size();
-            vector <long long int> temp;
-            tensor_cpu = return_row(a,tensor_cpu,temp);
-        }
 
         //Initialize the Constructor for multidimensional array *infers shape from that*
         template<class Y>
@@ -522,19 +510,6 @@ class Tensor
         }
 };
 
-template<typename T, size_t ... Types>
-class Tensor
-{
-    vector<int> dimension_list = initializer_list<int>{Types...};
-    
-    Tensor <T> value;
-
-    template<class Y>
-    Tensor(Y a)
-    {
-        value(a,Types...);
-    }
-};
 
 int main()
 {
