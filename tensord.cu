@@ -441,7 +441,19 @@ class Tensor
             cudaMemcpy(&tensor_cpu[0], return_data, shape_total*sizeof(T),cudaMemcpyDeviceToHost);
             curandDestroyGenerator(gen);
             cudaFree(return_data);
-        }((end-current)>1)
+        }
+
+        void zeros(vector <int> Shape)
+        {
+            vector<long long int> dimension_list (Shape.begin(), Shape.end());
+            vector<long long int> stride_vector = stride_convert(dimension_list);
+            //stride_vector = dimension_list;
+            const long long int shape_total = accumulate(dimension_list.begin(),dimension_list.end(),1,multiplies<long long int>());
+            const int N = dimension_list.size();
+            vector<T> tens(shape_total,(T)0);
+            tensor_cpu = tens;
+
+        }
         
         
 
@@ -485,7 +497,7 @@ class Tensor
         }
 
         //Reshape (Again just affects the strides)
-        void Reshape(vector <int> &Shape)
+        void Reshape(vector <int> Shape)
         {
             stride_vector = stride_convert(Shape);
         }
@@ -560,6 +572,14 @@ int main()
     Tensor <float,4,4> a5;
     a5.random_initialize();
     a5.print_elems();
+    Tensor <float> b1,b2;
+    vector <int> shape {8,8,8};
+    b1.zeros(shape);
+    vector< vector<int> > slicey{{2,4},{3,5},{4,7}};
+    b2 = b1.slice(slicey);
+    b1.print_elems();
+    b2.print_elems();
+    
     
 
 }
