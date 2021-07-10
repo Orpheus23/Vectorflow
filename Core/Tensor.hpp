@@ -18,7 +18,7 @@ class Tensor
     private:       
         
         
-        vector<long long int> stride_convert(vector<long long int> stride_vector_o)
+        std::vector<long long int> stride_convert(std::vector<long long int> stride_vector_o)
         {
             stride_vector_o[stride_vector_o.size()-1]=1;
             for (int i = stride_vector_o.size()-1;i>0;i--)
@@ -29,12 +29,12 @@ class Tensor
             return stride_vector_o;
         }
         
-        vector<long long int> dimension_list = {};
-        vector<long long int> stride_vector;
+        std::vector<long long int> dimension_list = {};
+        std::vector<long long int> stride_vector;
         long long int shape_total=1;
         int N=1;
-        //thrust::host_vector <T> tensor;
-        vector <T> tensor_cpu;
+        //thrust::std::host_vector <T> tensor;
+        std::vector <T> tensor_cpu;
         tensor <T> mat;
 
     
@@ -51,28 +51,28 @@ class Tensor
             
         }
 
-        //Initialize the Constructor for only shape *defaults to zero vector*
+        //Initialize the Constructor for only shape *defaults to zero std::vector*
         template<typename ... Args>
         Tensor(Args... Axii)
         {
-            dimension_list = initializer_list<long long int>{Axii...};
+            dimension_list = std::initializer_list<long long int>{Axii...};
             stride_vector = stride_convert(dimension_list);
             //stride_vector = dimension_list;
             shape_total = accumulate(dimension_list.begin(),dimension_list.end(),1,multiplies<long long int>());
             N = dimension_list.size();
-            vector<T> tens(shape_total,(T)0);
+            std::vector<T> tens(shape_total,(T)0);
             tensor_cpu = tens;
         }
 
-        //Initialize the Constructor for no inputs *defaults to zero vector*
+        //Initialize the Constructor for no inputs *defaults to zero std::vector*
         Tensor()
         {
-            vector<T> tens(1,(T)0);
+            std::vector<T> tens(1,(T)0);
             tensor_cpu = tens;
             
         }
 
-        //Prints the dimensions of the vector as created during declaration
+        //Prints the dimensions of the std::vector as created during declaration
         void print_dim()
         {
             cout<<"[ ";
@@ -87,7 +87,7 @@ class Tensor
             cout<< "Shape space: " <<shape_total << endl;
         }
 
-        //Prints the elements as they are stored during computation ie. a 1D vector
+        //Prints the elements as they are stored during computation ie. a 1D std::vector
         void print_elems()
         {
             cout<<"Printing elements:- ";
@@ -117,7 +117,7 @@ class Tensor
         template <typename ... Args>
         T operator()(const Args... Axii)
         { 
-            vector<int> index {Axii...};
+            std::vector<int> index {Axii...};
             int result = 0;
             for (int i = 0;i<index.size();i++)
             {
@@ -126,10 +126,10 @@ class Tensor
             return tensor_cpu[result]; 
         }
 
-        Tensor<T> operator()(vector< vector<int> > index)
+        Tensor<T> operator()(std::vector< std::vector<int> > index)
         { 
             int result;
-            vector <T> vals;
+            std::vector <T> vals;
             for (int i = 0;i<index[0].size();i++)
             {
                 result = 0;
@@ -143,13 +143,13 @@ class Tensor
             return rets; 
         }
 
-        Tensor<T> slice(vector< vector<int> > Axii)
+        Tensor<T> slice(std::vector< std::vector<int> > Axii)
         {
             
             
-            vector <long long int> idxs(1,0);
-            vector <T> vals;
-            vector <long long int> sh;
+            std::vector <long long int> idxs(1,0);
+            std::vector <T> vals;
+            std::vector <long long int> sh;
             for (int i = Axii.size()-1;i>=0;i--)
             {
                 auto old_size = idxs.size();
@@ -249,15 +249,15 @@ class Tensor
         }
 
         //Transpose (Basically affects the strides)
-        void Transpose(vector <int> Axis = {1})
+        void Transpose(std::vector <int> Axis = {1})
         {
             long long int temp,temp_d;
-            vector <long long int> stride2 = stride_vector;
+            std::vector <long long int> stridstride_vector;
             for (int i = 0;i<Axis.size();i++)
                 {
-                    temp = stride_vector[i];
-                    stride_vector[i] = stride_vector[Axis[i]];
-                    stride_vector[Axis[i]] = temp;
+                    testride_vector[i];
+stride_vector[i] = stride_vector[Axis[i]];
+stride_vector[Axis[i]] = temp;
                     temp_d = dimension_list[i];
                     dimension_list[i] = dimension_list[Axis[i]];
                     dimension_list[Axis[i]] = temp_d;
@@ -281,14 +281,14 @@ class Tensor
             cudaFree(return_data);
         }
 
-        void zeros(vector <int> Shape)
+        void zeros(std::vector <int> Shape)
         {
-            vector<long long int> dimension_list (Shape.begin(), Shape.end());
-            vector<long long int> stride_vector = stride_convert(dimension_list);
+            std::vector<long long int> dimension_list (Shape.begin(), Shape.end());
+            std::vector<long long int> stride_vector = stride_convert(dimension_list);
             //stride_vector = dimension_list;
             const long long int shape_total = accumulate(dimension_list.begin(),dimension_list.end(),1,multiplies<long long int>());
             const int N = dimension_list.size();
-            vector<T> tens(shape_total,(T)0);
+            std::vector<T> tens(shape_total,(T)0);
             tensor_cpu = tens;
 
         }
@@ -330,24 +330,24 @@ class Tensor
         void expand_dims(int Axis = 0)
         {
             auto itPos = stride_vector.begin() + Axis;
-            // Insert element with value 9 at 4th Position in vector
+            // Insert element with value 9 at 4th Position in std::vector
             stride_vector.insert(itPos, 9);
         }
 
         //Reshape (Again just affects the strides)
-        void Reshape(vector <long long int> Shape)
+        void Reshape(std::vector <long long int> Shape)
         {
             stride_vector = stride_convert(Shape);
         }
 
 
         
-        vector<long long int> shape()
+        std::vector<long long int> shape()
         {
             return dimension_list;
         }
 
-        //concats two vectors along a given axis
+        //concats two std::vectors along a given axis
         void concat (Tensor &b, int axis)
         {   
             long long int new_shape = (shape_total/dimension_list[axis])*(dimension_list[axis]+b.shape()[axis]);
@@ -356,7 +356,7 @@ class Tensor
             dimension_list[axis] += b.shape()[axis];
             
             long long int opp_idx = 0;
-            vector<T> output_tensor(new_shape,0);
+            std::vector<T> output_tensor(new_shape,0);
             for (long long i = 0; i< new_shape;i++)
             {
                 if (((i/stride_vector[axis])%dimension_list[axis] ) < orig_dim )
