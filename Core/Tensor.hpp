@@ -1,6 +1,6 @@
 
-#include "kernels.cuh"
-#include "tensor.cuh"
+#include "Vectorflow/cudaflow/kernels.cuh"
+#include "Vectorflow/cudaflow/tensor.cuh"
 #include "Flatten.hpp"
 #include <vector>
 #include <iostream>
