@@ -47,11 +47,13 @@ struct tensor
         
         __host__ __device__ void print_elems(const int total_length)
         {
+            /*
             for (int i = 0;i<total_length;i++)
             {
                 cout<< *(flattened+i) << " ";
             }
             cout << "\n";    
+            */
         }
 
     };

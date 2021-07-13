@@ -1,6 +1,5 @@
 
-#include "Vectorflow/cudaflow/kernels.cuh"
-#include "Vectorflow/cudaflow/tensor.cuh"
+#include "../cudaflow/kernels.cuh"
 #include "Flatten.hpp"
 #include <vector>
 #include <iostream>
@@ -9,8 +8,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <cassert>
+#include <numeric>
 
-template<typename T>
+template<typename T, size_t ... Shapes>
 class Tensor
 {   
     
@@ -36,6 +36,11 @@ class Tensor
         //thrust::std::host_vector <T> tensor;
         std::vector <T> tensor_cpu;
         tensor <T> mat;
+        dimension_list = std::initializer_list<long long int>{Shapes...};
+        stride_vector = stride_convert(dimension_list);
+        //stride_vector = dimension_list;
+        shape_total = std::accumulate(dimension_list.begin(),dimension_list.end(),1,std::multiplies<long long int>());
+        N = dimension_list.size();
 
     
     public:
@@ -44,10 +49,10 @@ class Tensor
         template<class Y>
         Tensor(Y a)
         {
-            N = dimension_list.size();
+
             tensor_cpu = Flatten_with_dims(a,tensor_cpu,dimension_list,0);
             stride_vector = stride_convert(dimension_list);
-            shape_total = accumulate(dimension_list.begin(),dimension_list.end(),1,multiplies<long long int>());
+            shape_total = std::accumulate(dimension_list.begin(),dimension_list.end(),1,std::multiplies<long long int>());
             
         }
 
@@ -58,7 +63,7 @@ class Tensor
             dimension_list = std::initializer_list<long long int>{Axii...};
             stride_vector = stride_convert(dimension_list);
             //stride_vector = dimension_list;
-            shape_total = accumulate(dimension_list.begin(),dimension_list.end(),1,multiplies<long long int>());
+            shape_total = std::accumulate(dimension_list.begin(),dimension_list.end(),1,std::multiplies<long long int>());
             N = dimension_list.size();
             std::vector<T> tens(shape_total,(T)0);
             tensor_cpu = tens;
@@ -75,26 +80,26 @@ class Tensor
         //Prints the dimensions of the std::vector as created during declaration
         void print_dim()
         {
-            cout<<"[ ";
+            std::cout<<"[ ";
             for (int element:dimension_list)
-                cout<< element <<" ";
-            cout<<"]"<<endl;
+                std::cout<< element <<" ";
+            std::cout<<"]"<<std::endl;
         }
 
         //Prints the product of all dims, remains constant while reshaping and transpose
         void dim_space()
         {
-            cout<< "Shape space: " <<shape_total << endl;
+            std::cout<< "Shape space: " <<shape_total << std::endl;
         }
 
         //Prints the elements as they are stored during computation ie. a 1D std::vector
         void print_elems()
         {
-            cout<<"Printing elements:- ";
-            cout<<"[ ";
+            std::cout<<"Printing elements:- ";
+            std::cout<<"[ ";
             for (auto elem:tensor_cpu)
-                cout<< elem<<" ";
-            cout<<"]"<<endl;
+                std::cout<< elem<<" ";
+            std::cout<<"]"<<std::endl;
         }
         
         //Reduces it to a base tensor class for gpu
@@ -193,6 +198,14 @@ class Tensor
 
         }
 
+        template <class B>
+        void operator = (vector<B> b)
+        {
+            tensor_cpu = Flatten_with_dims(b,tensor_cpu,dimension_list,0);
+            stride_vector = stride_convert(dimension_list);
+            shape_total = std::accumulate(dimension_list.begin(),dimension_list.end(),1,std::multiplies<long long int>());
+        }
+
 
         
 
@@ -216,8 +229,8 @@ class Tensor
             to_cpu();
             output_tensor.to_cpu();
 
-            cout << "CUDA Add successful";
-            cout << endl;
+            std::cout << "CUDA Add successful";
+            std::cout << std::endl;
             
             return output_tensor;
         }
@@ -242,8 +255,8 @@ class Tensor
             to_cpu();
             output_tensor.to_cpu();
 
-            cout << "CUDA Add successful";
-            cout << endl;
+            std::cout << "CUDA Add successful";
+            std::cout << std::endl;
             
             return output_tensor;
         }
@@ -255,9 +268,9 @@ class Tensor
             std::vector <long long int> stridstride_vector;
             for (int i = 0;i<Axis.size();i++)
                 {
-                    testride_vector[i];
-stride_vector[i] = stride_vector[Axis[i]];
-stride_vector[Axis[i]] = temp;
+                    temp = stride_vector[i];
+                    stride_vector[i] = stride_vector[Axis[i]];
+                    stride_vector[Axis[i]] = temp;
                     temp_d = dimension_list[i];
                     dimension_list[i] = dimension_list[Axis[i]];
                     dimension_list[Axis[i]] = temp_d;
@@ -286,7 +299,7 @@ stride_vector[Axis[i]] = temp;
             std::vector<long long int> dimension_list (Shape.begin(), Shape.end());
             std::vector<long long int> stride_vector = stride_convert(dimension_list);
             //stride_vector = dimension_list;
-            const long long int shape_total = accumulate(dimension_list.begin(),dimension_list.end(),1,multiplies<long long int>());
+            const long long int shape_total = std::accumulate(dimension_list.begin(),dimension_list.end(),1,std::multiplies<long long int>());
             const int N = dimension_list.size();
             std::vector<T> tens(shape_total,(T)0);
             tensor_cpu = tens;
@@ -297,10 +310,10 @@ stride_vector[Axis[i]] = temp;
 
         void print_stride()
         {
-            cout<<"[ ";
+            std::cout<<"[ ";
             for (int element:stride_vector)
-                cout<< element <<" ";
-            cout<<"]"<<endl;
+                std::cout<< element <<" ";
+            std::cout<<"]"<<std::endl;
         }
 
 
@@ -372,7 +385,7 @@ stride_vector[Axis[i]] = temp;
                 }
                
             }
-            cout <<endl;
+            std::cout <<std::endl;
             stride_vector = stride_convert(dimension_list);
             tensor_cpu = output_tensor;
 

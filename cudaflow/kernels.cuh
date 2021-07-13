@@ -1,7 +1,7 @@
 #include <cuda.h>
 #include <curand.h>
 #include <stdio.h>
-
+#include "tensor.cuh"
 
 //Kernel for element wise addition of two tensors
 template <typename T>
