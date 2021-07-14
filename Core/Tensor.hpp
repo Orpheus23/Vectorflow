@@ -10,7 +10,7 @@
 #include <cassert>
 #include <numeric>
 
-template<typename T, size_t ... Types>
+template<typename T, int ... Types>
 class Tensor
 {   
     

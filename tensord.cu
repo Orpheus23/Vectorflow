@@ -34,6 +34,7 @@ int main()
     
     a2.print_elems();
     Tensor<int> a3; 
+    /*
     a3 = a2+a0;
     Tensor <int> a4(v);
     a4.concat(a3, 1);
@@ -49,6 +50,7 @@ int main()
     b2 = b1.slice(slicey);
     b1.print_elems();
     b2.print_elems();
+    */
     
     
 
