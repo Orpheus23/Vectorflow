@@ -10,7 +10,7 @@
 #include <cassert>
 #include <numeric>
 
-template<typename T, int ... Types>
+template<typename T, std::size_t... Types>
 class Tensor
 {   
     
@@ -33,7 +33,7 @@ class Tensor
         //thrust::host_vector <T> tensor;
         std::vector <T> tensor_cpu;
         tensor <T> mat;
-        std::vector<long long int> dimension_list={};
+        std::vector<long long int> dimension_list=std::initializer_list<long long int>{Types...} ;
         std::vector<long long int> stride_vector;
         long long int shape_total;
         int N;
@@ -46,8 +46,9 @@ class Tensor
         Tensor(Y a)
         {
             int idx = 0;
-            tensor_cpu = Flatten_with_dims(a,tensor_cpu,dimension_list,idx);
-            
+            vector <long long int> dim2 = {};            
+            tensor_cpu = Flatten_with_dims(a,tensor_cpu,dim2,idx);
+            if (dimension_list.size()==0) dimension_list = dim2;
             stride_vector = stride_convert(dimension_list);
             shape_total = std::accumulate(dimension_list.begin(),dimension_list.end(),1,std::multiplies<long long int>());
             N = dimension_list.size();
