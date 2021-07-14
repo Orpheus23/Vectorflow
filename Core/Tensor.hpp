@@ -32,8 +32,8 @@ class Tensor
         
         //thrust::host_vector <T> tensor;
         std::vector <T> tensor_cpu;
-        std::tensor <T> mat;
-        std::vector<long long int> dimension_list;
+        tensor <T> mat;
+        std::vector<long long int> dimension_list={};
         std::vector<long long int> stride_vector;
         const long long int shape_total;
         const int N;
@@ -50,12 +50,14 @@ class Tensor
             
             stride_vector = stride_convert(dimension_list);
             shape_total = std::accumulate(dimension_list.begin(),dimension_list.end(),1,std::multiplies<long long int>());
+            N = dimension_list.size()
             
         }
 
         //Initialize the Constructor for no inputs *defaults to zero std::vector*
         Tensor()
         {
+            dimension_list.clear();
             dimension_list = std::initializer_list<long long int>{Types...};
             if (dimension_list.size()==0) dimension_list.push_back(1);
             stride_vector = stride_convert(dimension_list);
