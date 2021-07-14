@@ -13,18 +13,18 @@ template <typename T>
 struct tensor
     {
         T* flattened;
-        long long int *shape;
-        long long int *stride;
+        int *shape;
+        int *stride;
 
         
-        __device__ __host__ T operator() (const int j , const int dims, const long long int* ref_stride)
+        __device__ __host__ T operator() (const int j , const int dims, const int* ref_stride)
         {
             int result = 0;
             for (int i = 0;i<dims;i++)
             {
-                long long int curr_index = ref_stride[i];
+                int curr_index = ref_stride[i];
                 int idxs = (j/ (1*(curr_index==1)+(curr_index)*(curr_index!=1)));
-                long long int stride_i = *(stride+i),shape_i=*(shape+i);
+                int stride_i = *(stride+i),shape_i=*(shape+i);
                 result += (stride_i) * (idxs%(shape_i));
             }
             
@@ -51,7 +51,7 @@ struct tensor
             *(flattened+result) = j;
         }
         
-        __host__ __device__ void print_elems(long long int total_length)
+        __host__ __device__ void print_elems(int total_length)
         {
             
             printf("%d \n",flattened[total_length+1]);

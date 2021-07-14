@@ -2,7 +2,7 @@
 #include <iostream>
 
 template <typename T>
-std::vector<T> Flatten_with_dims(std::vector<T> v,std::vector<T> empty,std::vector<long long int> &dims,int level)
+std::vector<T> Flatten_with_dims(std::vector<T> v,std::vector<T> empty,std::vector<int> &dims,int level)
 {
     std::vector <T> temp;
     temp.insert(temp.end(),v.begin(),v.end());
@@ -15,7 +15,7 @@ std::vector<T> Flatten_with_dims(std::vector<T> v,std::vector<T> empty,std::vect
 
 
 template<class T,typename T_>
-std::vector<T_> Flatten_with_dims(std::vector<T> &rows,std::vector<T_> empty,std::vector<long long int> &dims,int &level)
+std::vector<T_> Flatten_with_dims(std::vector<T> &rows,std::vector<T_> empty,std::vector<int> &dims,int &level)
 {
     
     if (dims.size()==level) 
