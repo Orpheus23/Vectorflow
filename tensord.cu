@@ -33,7 +33,7 @@ int main()
     Tensor<int> a2(v);
     
     a2.print_elems();
-    Tensor<int> a3(4,4); 
+    Tensor<int> a3; 
     a3 = a2+a0;
     Tensor <int> a4(v);
     a4.concat(a3, 1);
