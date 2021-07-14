@@ -10,16 +10,18 @@
 #include <cassert>
 #include <numeric>
 
-template<typename T, size_t ... Shapes>
+template<typename T, size_t ... Types>
 class Tensor
 {   
     
     int is_gpu = 0;
     private:       
         
-        std::vector <T> tensor_cpu;
-        tensor <T> mat;
-        std::vector<long long int> dimension_list = std::initializer_list<long long int>{Shapes...};
+        std::vector<long long int> dimension_list = std::initializer_list<long long int>{Types...};
+        std::vector<long long int> stride_vector = stride_convert(dimension_list);
+        //stride_vector = dimension_list;
+        const long long int shape_total = std::accumulate(dimension_list.begin(),dimension_list.end(),1,std::multiplies<long long int>());
+        const int N = dimension_list.size();
         std::vector<long long int> stride_convert(std::vector<long long int> stride_vector_o)
         {
             stride_vector_o[stride_vector_o.size()-1]=1;
@@ -31,16 +33,10 @@ class Tensor
             return stride_vector_o;
         }
         
-        //std::vector<long long int> dimension_list;
-        //std::vector<long long int> stride_vector;
-        //long long int shape_total=1;
-        //int N=1;
-        //thrust::std::host_vector <T> tensor;
         
-        std::vector<long long int> stride_vector = stride_convert(dimension_list);
-        //stride_vector = dimension_list;
-        long long int shape_total = std::accumulate(dimension_list.begin(),dimension_list.end(),1,std::multiplies<long long int>());
-        int N = dimension_list.size();
+        //thrust::host_vector <T> tensor;
+        std::vector <T> tensor_cpu;
+        std::tensor <T> mat;
 
     
     public:
@@ -201,6 +197,8 @@ class Tensor
             b.to_gpu();
             to_gpu();
             Tensor<T> output_tensor;
+            output_tensor.zeros(dimension_list);
+            Tensor<T,Types...> output_tensor;
             output_tensor.to_gpu();
             
             tensor<T> mat1;
@@ -227,6 +225,7 @@ class Tensor
             b.to_gpu();
             to_gpu();
             Tensor<T> output_tensor;
+            output_tensor.zeros(dimension_list);
             output_tensor.to_gpu();
             
             tensor<T> mat1;
