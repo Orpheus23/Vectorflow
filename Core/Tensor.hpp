@@ -29,18 +29,18 @@ class Tensor
             return stride_vector_o;
         }
         
-        std::vector<long long int> dimension_list = {};
-        std::vector<long long int> stride_vector;
-        long long int shape_total=1;
-        int N=1;
+        //std::vector<long long int> dimension_list;
+        //std::vector<long long int> stride_vector;
+        //long long int shape_total=1;
+        //int N=1;
         //thrust::std::host_vector <T> tensor;
         std::vector <T> tensor_cpu;
         tensor <T> mat;
-        dimension_list = std::initializer_list<long long int>{Shapes...};
-        stride_vector = stride_convert(dimension_list);
+        std::vector<long long int> dimension_list = std::initializer_list<long long int>{Shapes...};
+        std::vector<long long int> stride_vector = stride_convert(dimension_list);
         //stride_vector = dimension_list;
-        shape_total = std::accumulate(dimension_list.begin(),dimension_list.end(),1,std::multiplies<long long int>());
-        N = dimension_list.size();
+        long long int shape_total = std::accumulate(dimension_list.begin(),dimension_list.end(),1,std::multiplies<long long int>());
+        int N = dimension_list.size();
 
     
     public:
@@ -49,8 +49,8 @@ class Tensor
         template<class Y>
         Tensor(Y a)
         {
-
-            tensor_cpu = Flatten_with_dims(a,tensor_cpu,dimension_list,0);
+            int idx = 0;
+            tensor_cpu = Flatten_with_dims(a,tensor_cpu,dimension_list,idx);
             stride_vector = stride_convert(dimension_list);
             shape_total = std::accumulate(dimension_list.begin(),dimension_list.end(),1,std::multiplies<long long int>());
             
@@ -199,7 +199,7 @@ class Tensor
         }
 
         template <class B>
-        void operator = (vector<B> b)
+        void operator = (std::vector<B> b)
         {
             tensor_cpu = Flatten_with_dims(b,tensor_cpu,dimension_list,0);
             stride_vector = stride_convert(dimension_list);
