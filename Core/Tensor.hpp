@@ -58,7 +58,7 @@ class Tensor
         Tensor()
         {
             dimension_list.clear();
-            dimension_list = std::initializer_list<long long int>{Types...};
+            dimension_list = std::initializer_list<long long int>{Types};
             if (dimension_list.size()==0) dimension_list.push_back(1);
             stride_vector = stride_convert(dimension_list);
             //stride_vector = dimension_list;
