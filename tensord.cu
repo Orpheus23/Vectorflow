@@ -23,7 +23,7 @@ int main()
 
     
     //2 5 7 11 5 8 10 14 7 10 6 16 11 14 16 10
-    Tensor<int> a0(v); 
+    Tensor<int,4,4> a0(v); 
     a0.print_elems();
     a0.print_dim();
     a0.print_stride();
