@@ -17,7 +17,9 @@ class Tensor
     int is_gpu = 0;
     private:       
         
-        
+        std::vector <T> tensor_cpu;
+        tensor <T> mat;
+        std::vector<long long int> dimension_list = std::initializer_list<long long int>{Shapes...};
         std::vector<long long int> stride_convert(std::vector<long long int> stride_vector_o)
         {
             stride_vector_o[stride_vector_o.size()-1]=1;
@@ -34,9 +36,7 @@ class Tensor
         //long long int shape_total=1;
         //int N=1;
         //thrust::std::host_vector <T> tensor;
-        std::vector <T> tensor_cpu;
-        tensor <T> mat;
-        std::vector<long long int> dimension_list = std::initializer_list<long long int>{Shapes...};
+        
         std::vector<long long int> stride_vector = stride_convert(dimension_list);
         //stride_vector = dimension_list;
         long long int shape_total = std::accumulate(dimension_list.begin(),dimension_list.end(),1,std::multiplies<long long int>());
@@ -54,19 +54,6 @@ class Tensor
             stride_vector = stride_convert(dimension_list);
             shape_total = std::accumulate(dimension_list.begin(),dimension_list.end(),1,std::multiplies<long long int>());
             
-        }
-
-        //Initialize the Constructor for only shape *defaults to zero std::vector*
-        template<typename ... Args>
-        Tensor(Args... Axii)
-        {
-            dimension_list = std::initializer_list<long long int>{Axii...};
-            stride_vector = stride_convert(dimension_list);
-            //stride_vector = dimension_list;
-            shape_total = std::accumulate(dimension_list.begin(),dimension_list.end(),1,std::multiplies<long long int>());
-            N = dimension_list.size();
-            std::vector<T> tens(shape_total,(T)0);
-            tensor_cpu = tens;
         }
 
         //Initialize the Constructor for no inputs *defaults to zero std::vector*
@@ -335,7 +322,7 @@ class Tensor
             cudaMemcpy(tensor_cpu.data(), mat.flattened, sizeof(T)*shape_total, cudaMemcpyDeviceToHost);
             
             cudaFree(mat.flattened);
-            cudaFree(mat.shape);
+            cudaFree(mat.shape);ontributions graph is a record of contributions you've made to GitHub repositories. Contributions are timestamped according to Coordinated Universal Time (UTC) rather than your local time zone. Contributions are only counted if they meet certain criteria. In some cases, we may need to reb
             //mat = {};
             is_gpu = 0;
         }
