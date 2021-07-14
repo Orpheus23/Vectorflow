@@ -17,11 +17,7 @@ class Tensor
     int is_gpu = 0;
     private:       
         
-        std::vector<long long int> dimension_list = std::initializer_list<long long int>{Types...};
-        std::vector<long long int> stride_vector = stride_convert(dimension_list);
-        //stride_vector = dimension_list;
-        const long long int shape_total = std::accumulate(dimension_list.begin(),dimension_list.end(),1,std::multiplies<long long int>());
-        const int N = dimension_list.size();
+       
         std::vector<long long int> stride_convert(std::vector<long long int> stride_vector_o)
         {
             stride_vector_o[stride_vector_o.size()-1]=1;
@@ -37,6 +33,10 @@ class Tensor
         //thrust::host_vector <T> tensor;
         std::vector <T> tensor_cpu;
         std::tensor <T> mat;
+        std::vector<long long int> dimension_list;
+        std::vector<long long int> stride_vector;
+        const long long int shape_total;
+        const int N;
 
     
     public:
@@ -47,6 +47,7 @@ class Tensor
         {
             int idx = 0;
             tensor_cpu = Flatten_with_dims(a,tensor_cpu,dimension_list,idx);
+            
             stride_vector = stride_convert(dimension_list);
             shape_total = std::accumulate(dimension_list.begin(),dimension_list.end(),1,std::multiplies<long long int>());
             
@@ -55,7 +56,14 @@ class Tensor
         //Initialize the Constructor for no inputs *defaults to zero std::vector*
         Tensor()
         {
-            std::vector<T> tens(1,(T)0);
+            dimension_list = std::initializer_list<long long int>{Types...};
+            if (dimension_list.size()==0) dimension_list.push_back(1);
+            stride_vector = stride_convert(dimension_list);
+            //stride_vector = dimension_list;
+            shape_total = std::accumulate(dimension_list.begin(),dimension_list.end(),1,std::multiplies<long long int>());
+            N = dimension_list.size();
+
+            std::vector<T> tens(shape_total,(T)0);
             tensor_cpu = tens;
             
         }
@@ -198,7 +206,6 @@ class Tensor
             to_gpu();
             Tensor<T> output_tensor;
             output_tensor.zeros(dimension_list);
-            Tensor<T,Types...> output_tensor;
             output_tensor.to_gpu();
             
             tensor<T> mat1;
