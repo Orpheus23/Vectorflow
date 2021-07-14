@@ -35,8 +35,8 @@ class Tensor
         tensor <T> mat;
         std::vector<long long int> dimension_list={};
         std::vector<long long int> stride_vector;
-        const long long int shape_total;
-        const int N;
+        long long int shape_total;
+        int N;
 
     
     public:
