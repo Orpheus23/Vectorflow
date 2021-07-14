@@ -1,7 +1,13 @@
-#include <algorithm>
+
+#include <iostream>
 #include <cuda.h>
 #include <curand.h>
+#include <cuda_runtime.h>
 #include <stdio.h>
+#include <stdlib.h>
+#if defined(__CUDA_ARCH__) && (__CUDA_ARCH__ < 200)
+    #define printf(f, ...) ((void)(f, __VA_ARGS__),0)
+#endif
 
 template <typename T>
 struct tensor
@@ -45,15 +51,11 @@ struct tensor
             *(flattened+result) = j;
         }
         
-        __host__ __device__ void print_elems(const int total_length)
+        __host__ __device__ void print_elems(long long int total_length)
         {
-            /*
-            for (int i = 0;i<total_length;i++)
-            {
-                cout<< *(flattened+i) << " ";
-            }
-            cout << "\n";    
-            */
+            
+            printf("%d \n",flattened[total_length+1]);
+            
         }
 
     };

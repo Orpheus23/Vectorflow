@@ -1,9 +1,6 @@
 #include "Core/Tensor.hpp"
 using namespace std;
 
-#if defined(__CUDA_ARCH__) && (__CUDA_ARCH__ < 200)
-    #define printf(f, ...) ((void)(f, __VA_ARGS__),0)
-#endif
 
 void verify_result(std::vector<int> &a, std::vector<int> &b,
                    std::vector<int> &c) {
@@ -33,13 +30,17 @@ int main()
     Tensor<int> a2(v);
     
     a2.print_elems();
+    a2.print_dim();
+    a2.print_stride();
+
     Tensor<int> a3; 
-    /*
     a3 = a2+a0;
+    a3.print_elems();
+    /*
+    
     Tensor <int> a4(v);
     a4.concat(a3, 1);
     a4.print_elems();
-    a3.print_elems();
     Tensor <float> a5;
     a5.random_initialize();
     a5.print_elems();

@@ -46,7 +46,7 @@ class Tensor
         Tensor(Y a)
         {
             int idx = 0;
-            vector <long long int> dim2 = {};            
+            std::vector <long long int> dim2 = {};            
             tensor_cpu = Flatten_with_dims(a,tensor_cpu,dim2,idx);
             if (dimension_list.size()==0) dimension_list = dim2;
             stride_vector = stride_convert(dimension_list);
@@ -202,12 +202,12 @@ class Tensor
 
 
         
-
-        Tensor operator + (Tensor &b)
+        template <std::size_t ... Types_b>
+        Tensor operator + (Tensor<T,Types_b...> &b)
         {
             b.to_gpu();
             to_gpu();
-            Tensor<T> output_tensor;
+            Tensor<T,Types...> output_tensor;
             output_tensor.zeros(dimension_list);
             output_tensor.to_gpu();
             
@@ -217,7 +217,7 @@ class Tensor
             mat1 = b.basic();
             mat2 = basic();
             mat3 = output_tensor.basic();
-
+            mat3.print_elems(shape_total);
             add <T> <<<(shape_total + 4  - 1) / 4 , 4>>> (mat1,mat2,mat3,shape_total,dimension_list.size());
             //cudaDeviceReset(); conflicts
             b.to_cpu();
@@ -230,11 +230,12 @@ class Tensor
             return output_tensor;
         }
 
-         Tensor operator * (Tensor &b)
+        template <std::size_t ... Types_b>
+        Tensor operator * (Tensor<T,Types_b...> &b)
         {
             b.to_gpu();
             to_gpu();
-            Tensor<T> output_tensor;
+            Tensor<T,Types...> output_tensor;
             output_tensor.zeros(dimension_list);
             output_tensor.to_gpu();
             
