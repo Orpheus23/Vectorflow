@@ -322,7 +322,7 @@ class Tensor
             cudaMemcpy(tensor_cpu.data(), mat.flattened, sizeof(T)*shape_total, cudaMemcpyDeviceToHost);
             
             cudaFree(mat.flattened);
-            cudaFree(mat.shape);ontributions graph is a record of contributions you've made to GitHub repositories. Contributions are timestamped according to Coordinated Universal Time (UTC) rather than your local time zone. Contributions are only counted if they meet certain criteria. In some cases, we may need to reb
+            cudaFree(mat.shape);
             //mat = {};
             is_gpu = 0;
         }
