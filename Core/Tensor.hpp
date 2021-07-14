@@ -50,7 +50,7 @@ class Tensor
             
             stride_vector = stride_convert(dimension_list);
             shape_total = std::accumulate(dimension_list.begin(),dimension_list.end(),1,std::multiplies<long long int>());
-            N = dimension_list.size()
+            N = dimension_list.size();
             
         }
 
@@ -289,7 +289,8 @@ class Tensor
             cudaFree(return_data);
         }
 
-        void zeros(std::vector <int> Shape)
+        template <typename V>
+        void zeros(std::vector <V> Shape)
         {
             std::vector<long long int> dimension_list (Shape.begin(), Shape.end());
             std::vector<long long int> stride_vector = stride_convert(dimension_list);
