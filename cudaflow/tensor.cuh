@@ -54,7 +54,7 @@ struct tensor
         __host__ __device__ void print_elems(int total_length)
         {
             
-            printf("%d \n",flattened[total_length+1]);
+            printf("%d \n",flattened[2]);
             
         }
 

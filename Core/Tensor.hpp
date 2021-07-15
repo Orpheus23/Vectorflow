@@ -33,7 +33,14 @@ class Tensor
         //thrust::host_vector <T> tensor;
         std::vector <T> tensor_cpu;
         tensor <T> mat;
-        std::vector<int> dimension_list=std::initializer_list<int>{Types...} ;
+
+        std::vector<int> dimension_list = std::initializer_list<int>{Types...};
+        //std::vector<int> stride_vector = stride_convert(dimension_list);
+        //stride_vector = dimension_list;
+        //int shape_total = std::accumulate(dimension_list.begin(),dimension_list.end(),1,std::multiplies<int>());
+        //int N = dimension_list.size();
+
+        //std::vector<int> dimension_list=std::initializer_list<int>{Types...} ;
         std::vector<int> stride_vector;
         int shape_total;
         int N;
@@ -48,11 +55,24 @@ class Tensor
             int idx = 0;
             std::vector <int> dim2 = {};            
             tensor_cpu = Flatten_with_dims(a,tensor_cpu,dim2,idx);
+            
             if (dimension_list.size()==0) dimension_list = dim2;
             stride_vector = stride_convert(dimension_list);
             shape_total = std::accumulate(dimension_list.begin(),dimension_list.end(),1,std::multiplies<int>());
             N = dimension_list.size();
             
+            
+        }
+        template <typename T_b,std::size_t...Types_b>
+        Tensor(Tensor<T_b,Types_b...> &b)
+        {
+            dimension_list = b.shape();
+            is_gpu = b.is_gpu;
+            tensor_cpu = b.flatten();
+            stride_vector = stride_convert(dimension_list);
+            shape_total = std::accumulate(dimension_list.begin(),dimension_list.end(),1,std::multiplies<int>());
+            N = dimension_list.size();
+
         }
 
         //Initialize the Constructor for no inputs *defaults to zero std::vector*
@@ -62,7 +82,7 @@ class Tensor
             dimension_list = std::initializer_list<int>{Types...};
             if (dimension_list.size()==0) dimension_list.push_back(1);
             stride_vector = stride_convert(dimension_list);
-            //stride_vector = dimension_list;
+            stride_vector = dimension_list;
             shape_total = std::accumulate(dimension_list.begin(),dimension_list.end(),1,std::multiplies<int>());
             N = dimension_list.size();
 
@@ -217,7 +237,7 @@ class Tensor
             mat1 = b.basic();
             mat2 = basic();
             mat3 = output_tensor.basic();
-            mat3.print_elems(shape_total);
+            //mat1.print_elems(shape_total);
             add <T> <<<(shape_total + 4  - 1) / 4 , 4>>> (mat1,mat2,mat3,shape_total,dimension_list.size());
             //cudaDeviceReset(); conflicts
             b.to_cpu();
@@ -274,6 +294,29 @@ class Tensor
                 }
         }
         
+        template <typename V>
+        void random_initialize(std::vector <V> Shape)
+        {
+            T* return_data;
+            dimension_list = Shape;
+            stride_vector = stride_convert(dimension_list);
+            //stride_vector = dimension_list;
+            shape_total = std::accumulate(dimension_list.begin(),dimension_list.end(),1,std::multiplies<int>());
+            N = dimension_list.size();
+            curandGenerator_t gen;
+            cudaMalloc((void **)&return_data, shape_total*sizeof(T));
+
+            curandCreateGenerator(&gen,CURAND_RNG_PSEUDO_DEFAULT);
+            
+            curandSetPseudoRandomGeneratorSeed(gen,1234ULL);
+
+            curandGenerateUniform(gen, return_data, shape_total);
+
+            cudaMemcpy(&tensor_cpu[0], return_data, shape_total*sizeof(T),cudaMemcpyDeviceToHost);
+            curandDestroyGenerator(gen);
+            cudaFree(return_data);
+        }
+
         void random_initialize()
         {
             T* return_data;
@@ -294,11 +337,11 @@ class Tensor
         template <typename V>
         void zeros(std::vector <V> Shape)
         {
-            std::vector<int> dimension_list (Shape.begin(), Shape.end());
-            std::vector<int> stride_vector = stride_convert(dimension_list);
+            dimension_list = Shape;
+            stride_vector = stride_convert(dimension_list);
             //stride_vector = dimension_list;
-            const int shape_total = std::accumulate(dimension_list.begin(),dimension_list.end(),1,std::multiplies<int>());
-            const int N = dimension_list.size();
+            shape_total = std::accumulate(dimension_list.begin(),dimension_list.end(),1,std::multiplies<int>());
+            N = dimension_list.size();
             std::vector<T> tens(shape_total,(T)0);
             tensor_cpu = tens;
 
@@ -318,7 +361,7 @@ class Tensor
         __host__ void to_gpu()
         {
 
-            std::cout<<dimension_list.size()<<std::endl;
+            std::cout<<tensor_cpu.data()[0]<<std::endl;
             
             cudaMalloc(&mat.flattened, sizeof(T)*shape_total);
             cudaMalloc(&mat.stride, sizeof(int)*dimension_list.size());
@@ -370,7 +413,7 @@ class Tensor
             
             int opp_idx = 0;
             std::vector<T> output_tensor(new_shape,0);
-            for (long long i = 0; i< new_shape;i++)
+            for (int i = 0; i< new_shape;i++)
             {
                 if (((i/stride_vector[axis])%dimension_list[axis] ) < orig_dim )
                 {

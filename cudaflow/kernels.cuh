@@ -9,7 +9,7 @@ void add(tensor<T> a, tensor<T> b,tensor<T> c ,long long int N_,int dims)
     
     int i = blockIdx.x * blockDim.x + threadIdx.x;
     //__shared__ int idxs[];
-    printf("a value: %d, b value: %d\n", a[i], b[i]);
+    //printf("a value: %d, b value: %d\n", a[i], b[i]);
     if (i < N_)
     {
         c.set(i,a(i,dims,a.stride) + b(i,dims,a.stride));

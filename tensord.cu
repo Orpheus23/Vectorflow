@@ -34,24 +34,28 @@ int main()
     a2.print_stride();
 
     Tensor<int> a3; 
+    //a3.print_elems();
     a3 = a2+a0;
     a3.print_elems();
-    /*
+    
     
     Tensor <int> a4(v);
     a4.concat(a3, 1);
     a4.print_elems();
+    
     Tensor <float> a5;
     a5.random_initialize();
     a5.print_elems();
+    
     Tensor <float> b1,b2;
-    vector <int> shape {8,8,8};
-    b1.zeros(shape);
+    vector <int> shape {4,4};
+    b1.random_initialize(shape);
+    
     vector< vector<int> > slicey{{2,4},{3,5},{4,7}};
     b2 = b1.slice(slicey);
     b1.print_elems();
     b2.print_elems();
-    */
+    
     
     
 
