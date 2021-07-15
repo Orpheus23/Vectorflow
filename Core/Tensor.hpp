@@ -168,18 +168,22 @@ class Tensor
             std::vector <int> idxs(1,0);
             std::vector <T> vals;
             std::vector <int> sh;
+            auto old_size = 0;
+            int current = 0;
+            int end  = 0;
+            int reverse = 0;
             for (int i = Axii.size()-1;i>=0;i--)
             {
-                auto old_size = idxs.size();
-                int current = Axii[i][0];
-                int end = Axii[i][Axii[i].size()-1];
-                int reverse = (end-current)<0;
+                old_size = idxs.size();
+                current = Axii[i][0];
+                end = Axii[i][Axii[i].size()-1];
+                reverse = (end-current)<0;
                 reverse = (1-2*reverse)-(end==current);
                 if (reverse!=0) sh.push_back(reverse *(end-current));
                 reverse += (end==(current-1))-((end-1)==current);
                 
                 idxs.reserve(((reverse *(end-current)))* (old_size));
-                std::copy_n(idxs.begin(), old_size*reverse, std::back_inserter(idxs));
+                std::copy_n(idxs.begin(), reverse *(end-current), std::back_inserter(idxs));
                 std::cout << current <<" "<< end<<std::endl;
                 for (int j = 0;j<idxs.size();j++)
                 {
