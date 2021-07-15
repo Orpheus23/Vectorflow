@@ -82,7 +82,6 @@ class Tensor
             dimension_list = std::initializer_list<int>{Types...};
             if (dimension_list.size()==0) dimension_list.push_back(1);
             stride_vector = stride_convert(dimension_list);
-            stride_vector = dimension_list;
             shape_total = std::accumulate(dimension_list.begin(),dimension_list.end(),1,std::multiplies<int>());
             N = dimension_list.size();
 
@@ -180,13 +179,14 @@ class Tensor
                 reverse += (end==(current-1))-((end-1)==current);
                 
                 idxs.reserve(((reverse *(end-current)))* (old_size));
-                std::copy_n(idxs.begin(), old_size, std::back_inserter(idxs));
-                
+                std::copy_n(idxs.begin(), old_size*reverse, std::back_inserter(idxs));
+                std::cout << current <<" "<< end<<std::endl;
                 for (int j = 0;j<idxs.size();j++)
                 {
                     idxs[j] += (current%dimension_list[i])*stride_vector[i];
                     current += reverse*((j%old_size)==0);
                     if (i == 0) vals.push_back(tensor_cpu[idxs[j]]);
+                    std::cout << idxs[j]<< " " << stride_vector[i]<<std::endl;
                     
                 }
                 
@@ -302,6 +302,7 @@ class Tensor
             stride_vector = stride_convert(dimension_list);
             //stride_vector = dimension_list;
             shape_total = std::accumulate(dimension_list.begin(),dimension_list.end(),1,std::multiplies<int>());
+            std::cout << shape_total*sizeof(T) <<std::endl;
             N = dimension_list.size();
             curandGenerator_t gen;
             cudaMalloc((void **)&return_data, shape_total*sizeof(T));
@@ -410,7 +411,6 @@ class Tensor
             int orig_dim = dimension_list[axis];
             int sub_index = 0;
             dimension_list[axis] += b.shape()[axis];
-            
             int opp_idx = 0;
             std::vector<T> output_tensor(new_shape,0);
             for (int i = 0; i< new_shape;i++)
