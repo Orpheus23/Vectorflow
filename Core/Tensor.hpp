@@ -317,6 +317,8 @@ class Tensor
 
         __host__ void to_gpu()
         {
+
+            std::cout<<dimension_list.size()<<std::endl;
             
             cudaMalloc(&mat.flattened, sizeof(T)*shape_total);
             cudaMalloc(&mat.stride, sizeof(int)*dimension_list.size());
