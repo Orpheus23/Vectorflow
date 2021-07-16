@@ -40,16 +40,23 @@ int main()
     
     
     Tensor <int> a4(v);
-    a4.concat(a3, 1);
     a4.print_elems();
-    
+    a4.concat(a3, 1);
+    a4.print_dim();
+    a4.print_stride();
+    a4.print_elems();
+    vector <int> shape {4,4};
     Tensor <float> a5;
-    a5.random_initialize();
+    a5.random_initialize(shape);
+    std::cout << "Printing elements of a5" << std::endl;
+    a5.print_stride();
+    a5.print_dim();
+    
     a5.print_elems();
     
     Tensor <float,4,4> b1;
     Tensor <float> b2;
-    vector <int> shape {4,4};
+    
     b1.random_initialize();
     
     vector< vector<int> > slicey{{1,3},{1,3}};

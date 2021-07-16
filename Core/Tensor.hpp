@@ -110,12 +110,14 @@ class Tensor
         {
             std::vector<int> open (dimension_list.size(),0);
             int brack = dimension_list[dimension_list.size()-1];
-            std::cout<<"Printing elements:- ";
+            int val = 0;
+            std::cout<<"Printing "<<shape_total<<" elements:- ";
             for (int i = 0; i<shape_total;i++)
             {
                 for(int j = 0; j<dimension_list.size();j++)
                 {
-                    if ((i%(stride_vector[j]*brack))==0)
+                    val = (stride_vector[j]*brack);
+                    if ((i%val)==0)
                     {
                         if(open[j]==0)
                         {
@@ -130,7 +132,7 @@ class Tensor
                     }
                     
                 }
-                std::cout<< tensor_cpu[i] <<","+(8)*(i==(shape_total-1));
+                std::cout<< tensor_cpu[i] <<","+(8)*((i+1)%(val)==0);
             }
             for (int i = 0; i <N;i++)
             {
@@ -235,8 +237,8 @@ class Tensor
             return tensor_cpu[i];
         }
 
-
-        void operator = (Tensor b)
+        template <std::size_t...Types_b>
+        void operator = (Tensor<T,Types_b...> b)
         {
             dimension_list = b.shape();
             is_gpu = b.is_gpu;
@@ -329,31 +331,38 @@ class Tensor
         template <typename V>
         void random_initialize(std::vector <V> Shape)
         {
-            T* return_data;
+            
             dimension_list = Shape;
-            stride_vector = stride_convert(dimension_list);
-            //stride_vector = dimension_list;
-            shape_total = std::accumulate(dimension_list.begin(),dimension_list.end(),1,std::multiplies<int>());
-            std::cout << shape_total*sizeof(T) <<std::endl;
-            N = dimension_list.size();
+            
+            
+            
+            N = Shape.size();
+            
+            T* return_data;
             curandGenerator_t gen;
             cudaMalloc((void **)&return_data, shape_total*sizeof(T));
-
+            
             curandCreateGenerator(&gen,CURAND_RNG_PSEUDO_DEFAULT);
             
             curandSetPseudoRandomGeneratorSeed(gen,1234ULL);
-
+            
             curandGenerateUniform(gen, return_data, shape_total);
-
-            cudaMemcpy(&tensor_cpu[0], return_data, shape_total*sizeof(T),cudaMemcpyDeviceToHost);
+            
+            cudaMemcpy(tensor_cpu.data(), return_data, shape_total*sizeof(T),cudaMemcpyDeviceToHost);
+            
             curandDestroyGenerator(gen);
+            
             cudaFree(return_data);
+            stride_vector = stride_convert(Shape);
+            shape_total = std::accumulate(Shape.begin(),Shape.end(),1,std::multiplies<int>());
+            
         }
 
         void random_initialize()
         {
             T* return_data;
             curandGenerator_t gen;
+            std::cout << shape_total*sizeof(T) <<std::endl;
             cudaMalloc((void **)&return_data, shape_total*sizeof(T));
 
             curandCreateGenerator(&gen,CURAND_RNG_PSEUDO_DEFAULT);
@@ -362,7 +371,7 @@ class Tensor
 
             curandGenerateUniform(gen, return_data, shape_total);
 
-            cudaMemcpy(&tensor_cpu[0], return_data, shape_total*sizeof(T),cudaMemcpyDeviceToHost);
+            cudaMemcpy(tensor_cpu.data(), return_data, shape_total*sizeof(T),cudaMemcpyDeviceToHost);
             curandDestroyGenerator(gen);
             cudaFree(return_data);
         }
@@ -372,7 +381,6 @@ class Tensor
         {
             dimension_list = Shape;
             stride_vector = stride_convert(dimension_list);
-            //stride_vector = dimension_list;
             shape_total = std::accumulate(dimension_list.begin(),dimension_list.end(),1,std::multiplies<int>());
             N = dimension_list.size();
             std::vector<T> tens(shape_total,(T)0);
@@ -385,7 +393,7 @@ class Tensor
         void print_stride()
         {
             std::cout<<"[ ";
-            for (int element:stride_vector)
+            for (auto element:stride_vector)
                 std::cout<< element <<" ";
             std::cout<<"]"<<std::endl;
         }
@@ -437,7 +445,8 @@ class Tensor
         }
 
         //concats two std::vectors along a given axis
-        void concat (Tensor &b, int axis)
+        template<std::size_t ... Types_b>
+        void concat (Tensor<T,Types_b...> &b, int axis)
         {   
             int new_shape = (shape_total/dimension_list[axis])*(dimension_list[axis]+b.shape()[axis]);
             int orig_dim = dimension_list[axis];
@@ -460,9 +469,9 @@ class Tensor
                 }
                
             }
-            std::cout <<std::endl;
             stride_vector = stride_convert(dimension_list);
             tensor_cpu = output_tensor;
+            shape_total = std::accumulate(dimension_list.begin(),dimension_list.end(),1,std::multiplies<int>());
 
 
         }
