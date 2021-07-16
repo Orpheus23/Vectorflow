@@ -47,11 +47,12 @@ int main()
     a5.random_initialize();
     a5.print_elems();
     
-    Tensor <float> b1,b2;
+    Tensor <float,4,4> b1;
+    Tensor <float> b2;
     vector <int> shape {4,4};
-    b1.random_initialize(shape);
+    b1.random_initialize();
     
-    vector< vector<int> > slicey{{2,4},{3,5},{4,7}};
+    vector< vector<int> > slicey{{1,3},{1,3}};
     b2 = b1.slice(slicey);
     b1.print_elems();
     b2.print_elems();

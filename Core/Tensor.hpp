@@ -108,11 +108,39 @@ class Tensor
         //Prints the elements as they are stored during computation ie. a 1D std::vector
         void print_elems()
         {
+            std::vector<int> open (dimension_list.size(),0);
+            int brack = dimension_list[dimension_list.size()-1];
             std::cout<<"Printing elements:- ";
-            std::cout<<"[ ";
-            for (auto elem:tensor_cpu)
-                std::cout<< elem<<" ";
-            std::cout<<"]"<<std::endl;
+            for (int i = 0; i<shape_total;i++)
+            {
+                for(int j = 0; j<dimension_list.size();j++)
+                {
+                    if ((i%(stride_vector[j]*brack))==0)
+                    {
+                        if(open[j]==0)
+                        {
+                            std::cout<<"[";
+                            open[j] = 1;
+                        }
+                        else
+                        {
+                            std::cout<<"],[";
+                        }
+                        
+                    }
+                    
+                }
+                std::cout<< tensor_cpu[i] <<","+(8)*(i==(shape_total-1));
+            }
+            for (int i = 0; i <N;i++)
+            {
+                if (open[i] !=0)
+                {
+                    std::cout <<"]";
+                }
+            }
+            
+            std::cout<<std::endl;
         }
         
         //Reduces it to a base tensor class for gpu
