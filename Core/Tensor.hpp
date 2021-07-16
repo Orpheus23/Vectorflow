@@ -146,7 +146,7 @@ class Tensor
         }
         
         //Reduces it to a base tensor class for gpu
-        auto basic()
+        auto cuda()
         {
             assert(is_gpu == 1);
 
@@ -195,38 +195,41 @@ class Tensor
         {
             
             
-            std::vector <int> idxs(1,0);
-            std::vector <T> vals;
+            std::vector <T> idxs(1,(T)0);
             std::vector <int> sh;
             auto old_size = 0;
             int current = 0;
             int end  = 0;
             int reverse = 0;
+            int S = 0;
             for (int i = Axii.size()-1;i>=0;i--)
             {
                 old_size = idxs.size();
-                current = Axii[i][0];
-                end = Axii[i][Axii[i].size()-1];
-                reverse = (end-current)<0;
-                reverse = (1-2*reverse)-(end==current);
-                if (reverse!=0) sh.push_back(reverse *(end-current));
-                reverse += (end==(current-1))-((end-1)==current);
+                i-=(S==0);
+                current = ((dimension_list[i-(S==0)]+Axii[i][0])%dimension_list[i-(S==0)])*(Axii[i].empty());
+                end = ((dimension_list[i-(S==0)]+Axii[i][Axii[i].size()-1])%dimension_list[i-(S==0)])*(Axii[i].empty());
+                reverse = 1-(2*((end-current)<0))-(end==current);
+                sh.push_back(reverse *(end-current)+(reverse==0));
+                //reverse += (end==(current-1))-((end-1)==current);
                 
-                idxs.reserve(((reverse *(end-current)))* (old_size));
-                std::copy_n(idxs.begin(), reverse *(end-current), std::back_inserter(idxs));
-                std::cout << current <<" "<< end<<std::endl;
-                for (int j = 0;j<idxs.size();j++)
+                //idxs.reserve(((reverse *end)-(reverse*current)-1)* (old_size));
+                idxs.resize(((reverse *end)-(reverse*current))* (old_size) + old_size*(!Axii[i].empty()));
+                std::cout << current <<" "<< end<<" "<< reverse <<std::endl;
+                end-=(reverse>0);
+                
+                for (int j = idxs.size()-1;j>=0;j--)
                 {
-                    idxs[j] += (current%dimension_list[i])*stride_vector[i];
-                    current += reverse*((j%old_size)==0);
-                    if (i == 0) vals.push_back(tensor_cpu[idxs[j]]);
-                    std::cout << idxs[j]<< " " << stride_vector[i]<<std::endl;
-                    
+                    idxs[j] = idxs[j%old_size] + (end%dimension_list[i-(S==0)])*stride_vector[i-(S==0)];
+                    std::cout << idxs[j]<< " " << j<<std::endl;
+                    end -= reverse*(((j+1)%(old_size+1))==0);
+                    idxs[j] = tensor_cpu[(int)idxs[j]]*(i==0) + (i!=0)*idxs[j];
                 }
+                S = idxs.size()*(!Axii[i].empty());
                 
             }
-            Tensor <T> result(vals);
+            Tensor <T> result(idxs);
             result.Reshape(sh);
+            result.print_stride();
             return result;
 
 
@@ -268,9 +271,9 @@ class Tensor
             tensor<T> mat1;
             tensor<T> mat2;
             tensor<T> mat3;
-            mat1 = b.basic();
-            mat2 = basic();
-            mat3 = output_tensor.basic();
+            mat1 = b.cuda();
+            mat2 = cuda();
+            mat3 = output_tensor.cuda();
             //mat1.print_elems(shape_total);
             add <T> <<<(shape_total + 4  - 1) / 4 , 4>>> (mat1,mat2,mat3,shape_total,dimension_list.size());
             //cudaDeviceReset(); conflicts
@@ -296,9 +299,9 @@ class Tensor
             tensor<T> mat1;
             tensor<T> mat2;
             tensor<T> mat3;
-            mat1 = b.basic();
-            mat2 = basic();
-            mat3 = output_tensor.basic();
+            mat1 = b.cuda();
+            mat2 = cuda();
+            mat3 = output_tensor.cuda();
 
             dot <T> <<<(shape_total + 4  - 1) / 4 , 4>>> (mat1,mat2,mat3,shape_total,dimension_list.size());
             //cudaDeviceReset();
@@ -312,7 +315,7 @@ class Tensor
             return output_tensor;
         }
 
-        //Transpose (Basically affects the strides)
+        //Transpose (cudaally affects the strides)
         void Transpose(std::vector <int> Axis = {1})
         {
             int temp,temp_d;
@@ -331,11 +334,10 @@ class Tensor
         template <typename V>
         void random_initialize(std::vector <V> Shape)
         {
-            
-            dimension_list = Shape;
-            
-            
-            
+            dimension_list.clear();
+            std::copy(Shape.begin(), Shape.end(), std::back_inserter(dimension_list));
+            shape_total = std::accumulate(Shape.begin(),Shape.end(),1,std::multiplies<int>());
+
             N = Shape.size();
             
             T* return_data;
@@ -353,8 +355,8 @@ class Tensor
             curandDestroyGenerator(gen);
             
             cudaFree(return_data);
-            stride_vector = stride_convert(Shape);
-            shape_total = std::accumulate(Shape.begin(),Shape.end(),1,std::multiplies<int>());
+            stride_vector = stride_convert(dimension_list);
+            //shape_total = std::accumulate(Shape.begin(),Shape.end(),1,std::multiplies<int>());
             
         }
 
@@ -362,7 +364,7 @@ class Tensor
         {
             T* return_data;
             curandGenerator_t gen;
-            std::cout << shape_total*sizeof(T) <<std::endl;
+            
             cudaMalloc((void **)&return_data, shape_total*sizeof(T));
 
             curandCreateGenerator(&gen,CURAND_RNG_PSEUDO_DEFAULT);
