@@ -90,6 +90,17 @@ class Tensor
             
         }
 
+        ~Tensor()
+        {
+            dimension_list.clear();
+            std::vector<int>().swap(dimension_list);
+            stride_vector.clear();
+            std::vector<int>().swap(stride_vector);
+            tensor_cpu.clear();
+            std::vector<T>().swap(tensor_cpu);
+            
+        }
+
         //Prints the dimensions of the std::vector as created during declaration
         void print_dim()
         {
@@ -201,35 +212,44 @@ class Tensor
             int current = 0;
             int end  = 0;
             int reverse = 0;
-            int S = 0;
+            int S = !(Axii.size()==N);
             for (int i = Axii.size()-1;i>=0;i--)
             {
+                
                 old_size = idxs.size();
-                i-=(S==0);
-                current = ((dimension_list[i-(S==0)]+Axii[i][0])%dimension_list[i-(S==0)])*(Axii[i].empty());
-                end = ((dimension_list[i-(S==0)]+Axii[i][Axii[i].size()-1])%dimension_list[i-(S==0)])*(Axii[i].empty());
+                if (Axii[i].empty())
+                {
+                    current = 0;
+                    end = 0;
+                }
+                else
+                {
+                    current = (dimension_list[i-S]+Axii[i][0])%dimension_list[i-S];
+                    end = (dimension_list[i-S]+Axii[i][Axii[i].size()-1])%dimension_list[i-S];
+                    
+                }
+                
                 reverse = 1-(2*((end-current)<0))-(end==current);
-                sh.push_back(reverse *(end-current)+(reverse==0));
+                sh.push_back(reverse *(end-current) + Axii[i].empty());
                 //reverse += (end==(current-1))-((end-1)==current);
                 
                 //idxs.reserve(((reverse *end)-(reverse*current)-1)* (old_size));
-                idxs.resize(((reverse *end)-(reverse*current))* (old_size) + old_size*(!Axii[i].empty()));
-                std::cout << current <<" "<< end<<" "<< reverse <<std::endl;
+                idxs.resize(((reverse *end)-(reverse*current))* (old_size) + old_size*(Axii[i].empty()));
+                
                 end-=(reverse>0);
                 
                 for (int j = idxs.size()-1;j>=0;j--)
                 {
-                    idxs[j] = idxs[j%old_size] + (end%dimension_list[i-(S==0)])*stride_vector[i-(S==0)];
-                    std::cout << idxs[j]<< " " << j<<std::endl;
+                    idxs[j] = idxs[j%old_size] + (end%dimension_list[i-S])*stride_vector[i-S];
                     end -= reverse*(((j+1)%(old_size+1))==0);
                     idxs[j] = tensor_cpu[(int)idxs[j]]*(i==0) + (i!=0)*idxs[j];
                 }
-                S = idxs.size()*(!Axii[i].empty());
+                S += ((S<=0)-(S>0))*Axii[i].empty();
                 
             }
             Tensor <T> result(idxs);
             result.Reshape(sh);
-            result.print_stride();
+
             return result;
 
 
@@ -334,30 +354,12 @@ class Tensor
         template <typename V>
         void random_initialize(std::vector <V> Shape)
         {
-            dimension_list.clear();
-            std::copy(Shape.begin(), Shape.end(), std::back_inserter(dimension_list));
-            shape_total = std::accumulate(Shape.begin(),Shape.end(),1,std::multiplies<int>());
-
-            N = Shape.size();
-            
-            T* return_data;
-            curandGenerator_t gen;
-            cudaMalloc((void **)&return_data, shape_total*sizeof(T));
-            
-            curandCreateGenerator(&gen,CURAND_RNG_PSEUDO_DEFAULT);
-            
-            curandSetPseudoRandomGeneratorSeed(gen,1234ULL);
-            
-            curandGenerateUniform(gen, return_data, shape_total);
-            
-            cudaMemcpy(tensor_cpu.data(), return_data, shape_total*sizeof(T),cudaMemcpyDeviceToHost);
-            
-            curandDestroyGenerator(gen);
-            
-            cudaFree(return_data);
+            dimension_list = Shape;
             stride_vector = stride_convert(dimension_list);
-            //shape_total = std::accumulate(Shape.begin(),Shape.end(),1,std::multiplies<int>());
-            
+            shape_total = std::accumulate(dimension_list.begin(),dimension_list.end(),1,std::multiplies<int>());
+            N = dimension_list.size();
+            random_initialize();
+            dimension_list = Shape;
         }
 
         void random_initialize()
@@ -403,8 +405,6 @@ class Tensor
 
         __host__ void to_gpu()
         {
-
-            std::cout<<tensor_cpu.data()[0]<<std::endl;
             
             cudaMalloc(&mat.flattened, sizeof(T)*shape_total);
             cudaMalloc(&mat.stride, sizeof(int)*dimension_list.size());
@@ -437,6 +437,8 @@ class Tensor
         void Reshape(std::vector <int> Shape)
         {
             stride_vector = stride_convert(Shape);
+            dimension_list = Shape;
+            N = dimension_list.size();
         }
 
 
